@@ -1,0 +1,1063 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <script>
+if (!localStorage.getItem('loginOK')) {
+  window.location.href = 'login.html';
+}
+</script>
+
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>GOMS - Genset Operation Monitoring System (Premium)</title>
+
+  <!-- Bootstrap -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- jsPDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+
+  <style>
+    /* ---------- THEME PALETTE (sesuai gambar: kuning + merah + hitam) ---------- */
+    :root{
+      --brand-yellow:#dfff3f;
+      --brand-red:#e53935;
+      --brand-black:#111827;
+      --card:#ffffff;
+      --muted:#6b7280;
+    }
+    html,body{height:100%;background:linear-gradient(180deg,#ebef16 0%, #fff8e1 100%);font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;}
+    /* ---------- SIDEBAR ---------- */
+    .sidebar{
+      width:300px;background:linear-gradient(180deg,var(--brand-yellow), #eeff07);height:100vh;position:fixed;left:0;top:0;padding:22px;border-right:1px solid rgba(0,0,0,0.06);box-shadow:0 6px 20px rgba(0,0,0,0.06);
+    }
+    .sidebar .logo{
+      display:flex;align-items:center;gap:12px;margin-bottom:10px;
+    }
+    .sidebar h3{margin:0;font-weight:700;color:var(--brand-black);letter-spacing:0.2px}
+    .sidebar p{margin:0;color:rgba(0,0,0,0.6);font-size:13px}
+
+    .sidebar .logo-img{
+  width:48px;
+  height:48px;
+  object-fit:contain;
+  flex-shrink:0;
+}
+
+.sidebar .logo-text h3{
+  margin:0;
+  font-size:18px;
+  font-weight:700;
+}
+
+.sidebar .logo-text p{
+  margin:0;
+  font-size:12px;
+  color:rgba(0,0,0,0.6);
+}
+
+    .menu{margin-top:18px}
+    .menu .nav-item{padding:10px 12px;border-radius:8px;cursor:pointer;color:var(--brand-black);font-weight:600}
+    .menu .nav-item.active{background:rgba(0,0,0,0.06)}
+    .sidebar-footer{position:absolute;bottom:18px;left:22px;font-size:13px;color:rgba(0,0,0,0.6)}
+
+    /* ---------- MAIN ---------- */
+    .main{margin-left:340px;padding:28px;min-height:100vh}
+    .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+    .card-metric{padding:18px;border-radius:12px;background:var(--card);border:1px solid #f3ef14f8}
+    .chart-card{background:var(--card);padding:14px;border-radius:12px;border:1px solid #f3ef19;box-shadow:0 6px 18px rgba(17,24,39,0.03)}
+    .small-muted{color:var(--muted)}
+    .form-section{background:var(--card);padding:18px;border-radius:12px;border:1px solid #e8f623}
+    .small-label{font-size:12px;color:var(--muted)}
+
+    /* inputs */
+    input[type="number"], input[type="text"], input[type="time"], input[type="date"], select {
+      border-radius:8px;border:1px solid #f7ec23;padding:10px;
+    }
+
+    /* table */
+    .wide-table td, .wide-table th { font-size:13px; vertical-align:middle; }
+
+    /* badges / buttons */
+    .btn-accent{background:var(--brand-red);color:white;border:none}
+    .btn-outline-accent{border:1px solid rgba(229,57,53,0.12);color:var(--brand-red);background:transparent}
+
+    /* responsive small */
+    @media(max-width:992px){
+      .sidebar{display:none}
+      .main{margin-left:16px;padding:16px}
+    }
+
+    
+  </style>
+</head>
+<body>
+  </html>
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="logo">
+      <!-- simple emblem -->
+      <img src="logoesdm.png" alt="Logo GOMS" class="logo-img">
+        <rect width="64" height="64" rx="8" fill="#111827"/>
+        <path d="M32 12L44 22V42L32 52L20 42V22L32 12Z" fill="#FFD23F"/>
+        <circle cx="32" cy="30" r="4" fill="#E53935"/>
+      </svg>
+      <div>
+        <h3>GOMS</h3>
+        <p>Genset Operation Monitoring System</p>
+      </div>
+    </div>
+
+    <div class="menu">
+      <div class="nav-item active" id="m-dashboard" data-target="dashboard">🏠 Dashboard</div>
+      <div class="nav-item" id="m-statistik" data-target="statistik">📊 Statistik</div>
+      <div class="nav-item" id="m-input" data-target="input">📝 Input Data</div>
+      <div class="nav-item" id="m-logbook" data-target="logbook">📚 Logbook Harian</div>
+      <div class="nav-item" id="m-absensi" data-target="absensi">🧾 Absensi Operator</div>
+    </div>
+
+    <div class="sidebar-footer">berAKHLAK • </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <!-- top -->
+    <div class="topbar">
+      <div>
+        <h2 style="margin:0">Genset Operation Monitoring System</h2>
+        <div class="small-muted">Monitoring Operasional Dan Efisiensi Genset Pembangkit Listrik Tenaga Diesel PPSDM MIGAS Cepu</div>
+      </div>
+      <div>
+        <!-- <button class="btn btn-outline-secondary me-2" id="btn-export-csv">Export CSV</button> -->
+        <!-- <button class="btn btn-outline-secondary me-2" id="btn-export-pdf">Export PDF</button>
+        <button class="btn btn-accent" id="btn-signout" style="display:none">Sign out</button> -->
+      </div>
+    </div>
+
+    <!-- ========== PAGE: DASHBOARD ========== -->
+    <div id="page-dashboard" class="page">
+      
+      <div id="anomali-box" class="alert alert-secondary mt-2">
+  Status Operasi:  <b id="status-operasi">-</b>
+<div id="smart-maint-result" class="alert alert-secondary mt-2">🤖 Prediksi Anomali: -
+</div>
+</div>
+
+      <div class="row g-3 mb-3">
+        <div class="col-md-3">
+          <div class="card-metric">
+            <div class="small-muted">Jam Operasi (total)</div>
+            <h3 id="metric-hours">0.0 Jam</h3>
+            <div class="small-muted mt-1">Total hours dari data</div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card-metric">
+            <div class="small-muted">Pemakaian Solar (total)</div>
+            <h3 id="metric-fuel">0.0 L</h3>
+            <div class="small-muted mt-1">Total liter solar</div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card-metric">
+            <div class="small-muted">Status Maintenance</div>
+            <h5  id="status-maintenance">Aman</b>
+            <div class="small-muted mt-1">Jadwal ganti oli</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- row charts top -->
+      <div class="row g-3">
+        <div class="col-md-6">
+          <div class="chart-card">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <strong>Beban (kW)</strong>
+              <small class="small-muted">Realtime / terakhir</small>
+            </div>
+            <canvas id="chart-load" height="150"></canvas>
+          </div>
+        </div>
+
+        <div class="col-md-6">
+          <div class="chart-card">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <strong>Hours (per entry)</strong>
+              <small class="small-muted">Kumulatif</small>
+            </div>
+            <canvas id="chart-hours" height="150"></canvas>
+          </div>
+        </div>
+      </div>
+      
+
+      
+
+      <!-- more charts -->
+      <div class="row g-3 mt-3">
+        <div class="col-md-6"><div class="chart-card"><strong>Temp Oil & Pressure</strong><canvas id="chart-params" height="140"></canvas></div></div>
+        <div class="col-md-6"><div class="chart-card"><strong>Solar (L)</strong><canvas id="chart-fuel" height="140"></canvas></div></div>
+      </div>
+
+      <!-- electrical & machine parameters -->
+      <div class="row g-3 mt-3">
+        <div class="col-md-6"><div class="chart-card"><strong>Tegangan (V1,V2,V3)</strong><canvas id="chart-voltage" height="140"></canvas></div></div>
+        <div class="col-md-6"><div class="chart-card"><strong>Arus (A1,A2,A3)</strong><canvas id="chart-current" height="140"></canvas></div></div>
+      </div>
+
+      <div class="row g-3 mt-3">
+        <div class="col-md-6"><div class="chart-card"><strong>Cosφ</strong><canvas id="chart-cosphi" height="140"></canvas></div></div>
+        <div class="col-md-6"><div class="chart-card"><strong>RPM</strong><canvas id="chart-rpm" height="140"></canvas></div></div>
+      </div>
+
+      <div class="row g-3 mt-3">
+        <div class="col-md-6"><div class="chart-card"><strong>Frekuensi (Hz)</strong><canvas id="chart-freq" height="140"></canvas></div></div>
+        <div class="col-md-6"><div class="chart-card"><strong>Temp Water (°C)</strong><canvas id="chart-water" height="140"></canvas></div></div>
+      </div>
+
+      <div class="row g-3 mt-3">
+        <div class="col-md-6"><div class="chart-card"><strong>Konsumsi Solar (L/jam)</strong><canvas id="chart-consume" height="140"></canvas></div></div>
+        <div class="col-md-6"><div class="chart-card"><strong>Efisiensi (%)</strong><canvas id="chart-efficiency" height="140"></canvas></div></div>
+      </div>
+
+    </div>
+
+    <!-- ========== PAGE: STATISTIK ========== -->
+    <div id="page-statistik" class="page" style="display:none">
+      <div class="row">
+        <div class="col-md-8">
+          <div class="card-metric mb-3">
+            <strong>Efisiensi per Jam</strong>
+            <canvas id="chart-eff-hour" height="140"></canvas>
+          </div>
+
+          <div class="card-metric">
+            <strong>Efisiensi Harian</strong>
+            <canvas id="chart-eff-day" height="140"></canvas>
+          </div>
+        </div>
+
+        <div class="col-md-4">
+          <div class="form-section mb-3">
+            <strong>Filter Data</strong>
+            <div class="mt-2">
+              <label class="small-label">Dari</label>
+              <input type="date" id="filter-from" class="form-control">
+              <label class="small-label mt-2">Sampai</label>
+              <input type="date" id="filter-to" class="form-control">
+              <button class="btn btn-accent mt-3 w-100" id="btn-apply-filter">Terapkan Filter</button>
+            </div>
+          </div>
+
+          <div class="card-metric">
+            <strong>Ringkasan Terfilter</strong>
+            <p class="mb-0 small-muted">Total kWh, Total Solar, Rata2 Efisiensi</p>
+            <div id="filter-summary" style="margin-top:12px">-</div>
+          </div>
+        </div>
+      </div>
+    </div>
+   
+
+
+    <!-- ========== PAGE: INPUT ========== -->
+    <div id="page-input" class="page" style="display:none">
+      <h3>Input Data Operasi (PPSDM MIGAS)</h3>
+      <div class="form-section mb-3">
+        <form id="formOperasiGenset" class="row g-3">
+          <!-- same form as before -->
+          <h5 class="col-12">Parameter Listrik</h5>
+          <div class="col-md-3"><label class="small-label">Jam</label><input type="time" id="jam" class="form-control"></div>
+          <div class="col-md-3"><label class="small-label">Beban (kW)</label><input type="number" id="beban_kw" class="form-control" step="0.1"></div>
+          <div class="col-md-3"><label class="small-label">KWH</label><input type="number" id="kwh" class="form-control" step="0.1"></div>
+          <div class="col-md-3"></div>
+
+          <div class="col-md-3"><label class="small-label">V1 (V)</label><input type="number" id="v1" class="form-control" step="0.1"></div>
+          <div class="col-md-3"><label class="small-label">V2 (V)</label><input type="number" id="v2" class="form-control" step="0.1"></div>
+          <div class="col-md-3"><label class="small-label">V3 (V)</label><input type="number" id="v3" class="form-control" step="0.1"></div>
+          <div class="col-md-3"></div>
+
+          <div class="col-md-3"><label class="small-label">A1 (A)</label><input type="number" id="a1" class="form-control" step="0.1"></div>
+          <div class="col-md-3"><label class="small-label">A2 (A)</label><input type="number" id="a2" class="form-control" step="0.1"></div>
+          <div class="col-md-3"><label class="small-label">A3 (A)</label><input type="number" id="a3" class="form-control" step="0.1"></div>
+          <div class="col-md-3"><label class="small-label">Cos Φ</label><input type="number" id="cosphi" class="form-control" step="0.01"></div>
+
+          <div class="col-md-3"><label class="small-label">Frekuensi (Hz)</label><input type="number" id="freq" class="form-control" step="0.01"></div>
+          <div class="col-md-3"><label class="small-label">Hours</label><input type="number" id="hours" class="form-control" step="0.1"></div>
+          <div class="col-md-3"><label class="small-label">RPM</label><input type="number" id="rpm" class="form-control" step="1"></div>
+          <div class="col-md-3"><label class="small-label">Pressure Oil</label><input type="number" id="press_oil" class="form-control" step="0.1"></div>
+
+          <div class="col-md-3"><label class="small-label">Temp Oil (°C)</label><input type="number" id="temp_oil" class="form-control" step="0.1"></div>
+          <div class="col-md-3"><label class="small-label">Temp Water (°C)</label><input type="number" id="temp_water" class="form-control" step="0.1"></div>
+          <div class="col-md-3"><label class="small-label">Battery (V)</label><input type="number" id="battery" class="form-control" step="0.1"></div>
+          <div class="col-md-3"><label class="small-label">Solar (L)</label><input type="number" id="solar" class="form-control" step="0.1"></div>
+
+          <h5 class="col-12 mt-3">Petugas & Keterangan</h5>
+          <div class="col-md-4"><label class="small-label">Nama Petugas</label><input type="text" id="petugas" class="form-control"></div>
+          <div class="col-md-8"><label class="small-label">Keterangan</label><input type="text" id="ket" class="form-control"></div>
+        </form>
+
+        <div class="mt-3 text-end">
+          <button id="btnSimpanOperasi" class="btn btn-accent">Simpan Data</button>
+          
+        </div>
+        <div id="statusSimpan" style="margin-top:8px; font-size:14px; color:var(--brand-black)"></div>
+
+        <h5 class="mt-4">Riwayat Input Terakhir</h5>
+        <div class="form-section">
+          <div style="overflow:auto; max-height:320px;">
+            <table class="table table-sm wide-table" id="tbl-history-full">
+              <thead><tr>
+                <th>Tanggal</th><th>Jam</th><th>Beban (kW)</th><th>KWH</th><th>V1</th><th>V2</th><th>V3</th>
+                <th>A1</th><th>A2</th><th>A3</th><th>CosΦ</th><th>Hz</th><th>Hours</th><th>RPM</th><th>OilP</th><th>TempO</th><th>Solar(L)</th><th>Petugas</th><th>Keterangan</th>
+              </tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    
+
+    
+
+    <!-- ========== PAGE: LOGBOOK ========== -->
+    <div id="page-logbook" class="page" style="display:none">
+      <h3>Logbook Harian</h3>
+      <div class="form-section">
+        <div class="row g-2">
+          <div class="col-md-3"><label>Tanggal</label><input id="log-date" class="form-control" type="date"></div>
+          <div class="col-md-3"><label>Shift</label><select id="log-shift" class="form-control"><option>Shift 1</option><option>Shift 2</option><option>Shift 3</option></select></div>
+          <div class="col-md-3"><label>Operator</label><input id="log-op" class="form-control" type="text"></div>
+          <div class="col-md-3"><label>Keterangan</label><input id="log-note" class="form-control" type="text"></div>
+        </div>
+        <div class="mt-2 text-end"><button id="btn-save-log" class="btn btn-accent">Simpan Log</button></div>
+      </div>
+
+      <div class="form-section mt-2" id="log-history"></div>
+    </div>
+
+    <!-- ========== PAGE: ABSENSI ========== -->
+    <div id="page-absensi" class="page" style="display:none">
+      <h3>Absensi Operator</h3>
+      <div class="form-section">
+        <div class="row g-2">
+          <div class="col-md-6"><label>Nama Operator</label><input id="abs-name" class="form-control" type="text"></div>
+          <div class="col-md-3"><label>Shift</label><select id="abs-shift" class="form-control"><option>Shift 1</option><option>Shift 2</option><option>Shift 3</option></select></div>
+          <div class="col-md-3" style="display:flex;align-items:end"><button id="btn-absen" class="btn btn-accent w-100">Absen Masuk</button></div>
+        </div>
+      </div>
+
+      <div class="form-section mt-3">
+        <h5>Daftar Absensi Terakhir</h5>
+        <div id="abs-list"></div>
+      </div>
+    </div>
+
+  </div> <!-- end main -->
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+
+  <script>
+    // ---------- CONFIG (gunakan config Anda, saya pakai config awal) ----------
+    const firebaseConfig = {
+      apiKey: "AIzaSyAv1C9UEPeardnf8XdHoKIIHeJ_m0rN2r0",
+      authDomain: "genset-monitoring-d6f29.firebaseapp.com",
+      projectId: "genset-monitoring-d6f29",
+      storageBucket: "genset-monitoring-d6f29.appspot.com",
+      messagingSenderId: "665424438650",
+      appId: "1:665424438650:web:80a07cbbbce35ff862e2c3"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+
+
+// ===========================deteksi anomali////////////////////////////////////////////////////////////////////////////////
+function detectAnomali(docs) {
+  if (!docs || docs.length === 0) return null;
+
+  const last = docs[docs.length - 1];
+  let masalah = [];
+
+  // ===== TEGANGAN =====
+  if (last.v1 < 380 || last.v1 > 420) masalah.push('V1 abnormal');
+  if (last.v2 < 380 || last.v2 > 420) masalah.push('V2 abnormal');
+  if (last.v3 < 380 || last.v3 > 420) masalah.push('V3 abnormal');
+
+  // ===== ARUS =====
+  if (last.a1 <= 0 || last.a1 > 600) masalah.push('A1 abnormal');
+  if (last.a2 <= 0 || last.a2 > 600) masalah.push('A2 abnormal');
+  if (last.a3 <= 0 || last.a3 > 600) masalah.push('A3 abnormal');
+
+  // ===== FREKUENSI =====
+  if (last.freq < 49 || last.freq > 51) masalah.push('Frekuensi abnormal');
+
+  // ===== RPM =====
+  if (last.rpm < 1450 || last.rpm > 1550) masalah.push('RPM abnormal');
+
+  // ===== OIL PRESSURE =====
+  if (last.press_oil < 30) masalah.push('Tekanan oli rendah');
+
+  // ===== TEMPERATUR =====
+  if (last.temp_oil > 110) masalah.push('Temperatur oli tinggi');
+
+  if (masalah.length > 0) {
+    return {
+      status: 'ANOMALI',
+      detail: masalah,
+      waktu: last.tanggal + ' ' + last.jam
+    };
+  }
+
+  return { status: 'NORMAL' };
+}
+
+
+//MAINTENANCE ANOMALI///////////////////////////////////////////////////////////////////////////////////////
+function smartMaintenanceDecision(docs) {
+  if (docs.length === 0) return null;
+
+  const last = docs[docs.length - 1];
+  const eff = hitungEfisiensiPLTD(last);
+  const tempOil = parseFloat(last.temp_oil || 0);
+  const anom = detectAnomali(docs);
+
+  let score = 0;
+  let reason = [];
+
+  if (eff < 32) { score += 40; reason.push('Efisiensi rendah'); }
+  if (tempOil > 95) { score += 35; reason.push('Temperatur oli tinggi'); }
+  if (anom && anom.status === 'ANOMALI') {
+    score += 30; reason.push('Anomali operasi');
+  }
+
+  let status = 'AMAN';
+  if (score >= 70) status = 'MAINTENANCE SEGERA';
+  else if (score >= 50) status = 'MAINTENANCE DISARANKAN';
+
+  return { status, score, reason: reason.join(', ') };
+}
+
+// RUMUS EFISIENSI SESUAI GAMBAR/////////////////////////////////////////////////////////////////////////////////////////////////
+
+const LHV_SOLAR = 42000; // kJ/L
+
+function hitungEfisiensiPLTD(data) {
+
+  
+  const bebanKW = Number(data.beban_kw);
+  const solarL  = Number(data.solar);
+  const hours = 1;
+
+
+  if (bebanKW <= 0 || solarL <= 0 || hours <= 0) return null;
+
+  // ENERGI listrik (kWh)
+  const energiListrik = bebanKW * hours;
+
+  // ENERGI solar (kWh)
+  const energiSolar = (solarL * LHV_SOLAR) / 3600;
+
+  return +(energiListrik / energiSolar * 100).toFixed(2);
+}
+
+
+//const LHV_SOLAR = 42000; // kJ/L
+
+function hitungEfisiensiHarian(records) {
+  let totalEnergiListrik = 0; // kWh
+  let totalEnergiSolar = 0;   // kWh
+
+  records.forEach(r => {
+    const bebanKW = Number(r.beban_kw);
+    const solarL  = Number(r.solar);
+    const hours   = Number(r.hours || 1);
+
+    if (bebanKW > 0 && solarL > 0 && hours > 0) {
+      // Energi listrik
+      totalEnergiListrik += bebanKW * hours;
+
+      // Energi solar
+      totalEnergiSolar += (solarL * LHV_SOLAR) / 3600;
+    }
+  });
+
+  if (totalEnergiSolar <= 0) return null;
+
+  return +(totalEnergiListrik / totalEnergiSolar * 100).toFixed(2);
+}
+
+
+// ===============================
+// PREDIKSI MAINTENANCE (TREND EFISIENSI)
+// ===============================
+function prediksiMaintenanceJam(docs) {
+  const eff = docs
+    .map(d => hitungEfisiensiPLTD(d))
+    .filter(e => e !== null && e > 0);
+
+  if (eff.length < 5) return null; // data belum cukup
+
+  // hitung tren penurunan efisiensi
+  let slope = 0;
+  for (let i = 1; i < eff.length; i++) {
+    slope += (eff[i] - eff[i - 1]);
+  }
+  slope = slope / (eff.length - 1);
+
+  // jika tidak menurun → belum perlu maintenance
+  if (slope >= 0) return null;
+
+  const effNow = eff[eff.length - 1];
+  const batasKritis = 30; // %
+  const jamMenujuKritis = Math.round(
+    (effNow - batasKritis) / Math.abs(slope)
+  );
+
+  return jamMenujuKritis > 0 ? jamMenujuKritis : 0;
+}
+
+
+
+
+    // ---------- NAV ----------
+    const mapping = {
+      'm-dashboard':'dashboard',
+      'm-statistik':'statistik',
+      'm-input':'input',
+      'm-logbook':'logbook',
+      'm-absensi':'absensi'
+    };
+    const pages = Object.values(mapping);
+
+    Object.keys(mapping).forEach(id=>{
+      const el = document.getElementById(id);
+      if(!el) return;
+      el.onclick = ()=>show(mapping[id]);
+    });
+
+    function show(name){
+      pages.forEach(p=>document.getElementById('page-'+p).style.display='none');
+      // remove active class
+      document.querySelectorAll('.menu .nav-item').forEach(n=>n.classList.remove('active'));
+      // set page
+      document.getElementById('page-'+name).style.display='block';
+      // set active navigation
+      const navKey = Object.keys(mapping).find(k=>mapping[k]===name);
+      if(navKey) document.getElementById(navKey).classList.add('active');
+    }
+
+    // ---------- Charts init (with gradients) ----------
+    function makeGradient(ctx, color1, color2){
+      const g = ctx.createLinearGradient(0,0,0,400);
+      g.addColorStop(0, color1);
+      g.addColorStop(1, color2);
+      return g;
+    }
+
+    // create all charts
+    const ctxLoad = document.getElementById('chart-load').getContext('2d');
+    const chartLoad = new Chart(ctxLoad,{type:'line',data:{labels:[],datasets:[{label:'Beban (kW)',data:[],fill:true,tension:0.3,backgroundColor:makeGradient(ctxLoad,'rgba(229,57,53,0.18)','rgba(229,57,53,0.02)'),borderColor:'#b71c1c'}]},options:{scales:{y:{beginAtZero:true}}}});
+
+    const ctxHours = document.getElementById('chart-hours').getContext('2d');
+    const chartHours = new Chart(ctxHours,{type:'bar',data:{labels:[],datasets:[{label:'Hours',data:[],backgroundColor:makeGradient(ctxHours,'rgba(0,0,0,0.12)','rgba(0,0,0,0.06)')}]},options:{scales:{y:{beginAtZero:true}}}});
+
+    const ctxParams = document.getElementById('chart-params').getContext('2d');
+    const chartParams = new Chart(ctxParams,{type:'line',data:{labels:[],datasets:[{label:'Temp Oil (°C)',data:[],borderColor:'#ff8f00',tension:0.3},{label:'Pressure Oil',data:[],borderColor:'#2e7d32',tension:0.3}]},options:{scales:{y:{beginAtZero:true}}}});
+
+    const ctxFuel = document.getElementById('chart-fuel').getContext('2d');
+    const chartFuel = new Chart(ctxFuel,{type:'line',data:{labels:[],datasets:[{label:'Solar (L)',data:[],fill:true,tension:0.3,backgroundColor:makeGradient(ctxFuel,'rgba(3,169,244,0.18)','rgba(3,169,244,0.02)'),borderColor:'#0277bd'}]},options:{scales:{y:{beginAtZero:true}}}});
+
+    const ctxVoltage = document.getElementById('chart-voltage').getContext('2d');
+    const chartVoltage = new Chart(ctxVoltage,{type:'line',data:{labels:[],datasets:[{label:'V1',data:[],tension:0.3,borderColor:'#d32f2f'},{label:'V2',data:[],tension:0.3,borderColor:'#f57c00'},{label:'V3',data:[],tension:0.3,borderColor:'#1976d2'}]},options:{scales:{y:{beginAtZero:false}}}});
+
+    const ctxCurrent = document.getElementById('chart-current').getContext('2d');
+    const chartCurrent = new Chart(ctxCurrent,{type:'line',data:{labels:[],datasets:[{label:'A1',data:[],tension:0.3,borderColor:'#00897b'},{label:'A2',data:[],tension:0.3,borderColor:'#6a1b9a'},{label:'A3',data:[],tension:0.3,borderColor:'#c2185b'}]},options:{scales:{y:{beginAtZero:true}}}});
+
+    const ctxCosphi = document.getElementById('chart-cosphi').getContext('2d');
+    const chartCosphi = new Chart(ctxCosphi,{type:'line',data:{labels:[],datasets:[{label:'Cos Phi',data:[],tension:0.3,borderColor:'#455a64'}]},options:{scales:{y:{beginAtZero:true,max:1}}}});
+
+    const ctxRPM = document.getElementById('chart-rpm').getContext('2d');
+    const chartRPM = new Chart(ctxRPM,{type:'bar',data:{labels:[],datasets:[{label:'RPM',data:[],backgroundColor:makeGradient(ctxRPM,'rgba(156,39,176,0.18)','rgba(156,39,176,0.02)')}]},options:{scales:{y:{beginAtZero:true}}}});
+
+    const ctxFreq = document.getElementById('chart-freq').getContext('2d');
+    const chartFreq = new Chart(ctxFreq,{type:'line',data:{labels:[],datasets:[{label:'Frekuensi (Hz)',data:[],tension:0.3,borderColor:'#00796b'}]},options:{scales:{y:{beginAtZero:false}}}});
+
+    const ctxWater = document.getElementById('chart-water').getContext('2d');
+    const chartWater = new Chart(ctxWater,{type:'line',data:{labels:[],datasets:[{label:'Temp Water (°C)',data:[],tension:0.3,borderColor:'#0288d1'}]},options:{scales:{y:{beginAtZero:true}}}});
+
+    const ctxConsume = document.getElementById('chart-consume').getContext('2d');
+    const chartConsume = new Chart(ctxConsume,{type:'line',data:{labels:[],datasets:[{label:'Konsumsi Solar (L/jam)',data:[],tension:0.3,borderColor:'#ef6c00',backgroundColor:makeGradient(ctxConsume,'rgba(239,108,0,0.14)','rgba(239,108,0,0.02)')}]},options:{scales:{y:{beginAtZero:true}}}});
+
+    const ctxEff = document.getElementById('chart-efficiency').getContext('2d');
+    const chartEff = new Chart(ctxEff,{type:'line',data:{labels:[],datasets:[{label:'Efisiensi (%)',data:[],tension:0.3,borderColor:'#6d4c41',backgroundColor:makeGradient(ctxEff,'rgba(109,76,65,0.12)','rgba(109,76,65,0.02)')}]},options:{scales:{y:{beginAtZero:true}}}});
+
+    const ctxEffHour = document.getElementById('chart-eff-hour').getContext('2d');
+    const chartEffHour = new Chart(ctxEffHour,{type:'line',data:{labels:[],datasets:[{label:'Efisiensi per Jam (%)',data:[],tension:0.3,borderColor:'#b71c1c',backgroundColor:makeGradient(ctxEffHour,'rgba(183,28,28,0.12)','rgba(183,28,28,0.02)')}]},options:{scales:{y:{beginAtZero:true}}}});
+
+    const ctxEffDay = document.getElementById('chart-eff-day').getContext('2d');
+    const chartEffDay = new Chart(ctxEffDay,{type:'bar',data:{labels:[],datasets:[{label:'Efisiensi Harian (%)',data:[],backgroundColor:makeGradient(ctxEffDay,'rgba(233,30,99,0.12)','rgba(233,30,99,0.02)')}]},options:{scales:{y:{beginAtZero:true}}}});
+
+    // ---------- Firestore collection ----------
+    const COL = 'operasi_genset_lengkap';
+
+    // ---------- Save form ----------
+    document.getElementById('btnSimpanOperasi').onclick = async () => {
+      const btn = document.getElementById('btnSimpanOperasi');
+      btn.disabled = true; btn.innerText = 'Menyimpan...';
+      const doc = {
+        tanggal: new Date().toISOString().slice(0,10),
+        jam: document.getElementById('jam').value || '',
+        beban_kw: parseFloat(document.getElementById('beban_kw').value) || 0,
+        kwh: parseFloat(document.getElementById('kwh').value) || 0,
+        v1: parseFloat(document.getElementById('v1').value) || 0,
+        v2: parseFloat(document.getElementById('v2').value) || 0,
+        v3: parseFloat(document.getElementById('v3').value) || 0,
+        a1: parseFloat(document.getElementById('a1').value) || 0,
+        a2: parseFloat(document.getElementById('a2').value) || 0,
+        a3: parseFloat(document.getElementById('a3').value) || 0,
+        cosphi: parseFloat(document.getElementById('cosphi').value) || 0,
+        freq: parseFloat(document.getElementById('freq').value) || 0,
+        hours: parseFloat(document.getElementById('hours').value) || 0,
+        rpm: parseFloat(document.getElementById('rpm').value) || 0,
+        press_oil: parseFloat(document.getElementById('press_oil').value) || 0,
+        temp_oil: parseFloat(document.getElementById('temp_oil').value) || 0,
+        temp_water: parseFloat(document.getElementById('temp_water').value) || 0,
+        battery: parseFloat(document.getElementById('battery').value) || 0,
+        solar: parseFloat(document.getElementById('solar').value) || 0,
+        petugas: document.getElementById('petugas').value || '',
+        ket: document.getElementById('ket').value || '',
+        ts: firebase.firestore.FieldValue.serverTimestamp()
+      };
+      try {
+        await db.collection(COL).add(doc);
+    
+
+        document.getElementById('statusSimpan').innerText = '✔ Data berhasil disimpan.';
+        btn.disabled = false; btn.innerText = 'Simpan Data';
+        await refreshMetrics();
+        await renderHistoryFull();
+      } catch(err) {
+        console.error(err);
+        document.getElementById('statusSimpan').innerText = '❌ Error: ' + (err.message || err);
+        btn.disabled = false; btn.innerText = 'Simpan Data';
+      }
+    };
+
+
+   
+
+
+
+    // ---------- Refresh metrics & charts ----------
+    async function refreshMetrics(filterFrom=null, filterTo=null){
+      try {
+        // build query
+        let q = db.collection(COL).orderBy('ts','desc').limit(200);
+        if(filterFrom) q = db.collection(COL).where('tanggal','>=',filterFrom).orderBy('ts','desc');
+        if(filterTo && filterFrom) q = db.collection(COL).where('tanggal','>=',filterFrom).where('tanggal','<=',filterTo).orderBy('ts','desc');
+
+        const snap = await q.get();
+        const docs = snap.docs.map(d=>({id:d.id, ...d.data()})).reverse();
+
+        
+
+        // metrics
+        // ===== JAM OPERASI TOTAL = RUNNING HOUR TERAKHIR =====
+let totalHours = 0;
+
+if (docs.length > 0) {
+  const last = docs[docs.length - 1];
+  totalHours = Number(last.hours) || 0;
+}
+
+
+document.getElementById('metric-hours').innerText =
+  totalHours.toFixed(1) + ' Jam';
+
+        const totalSolar = docs.reduce((s,x)=>s + (parseFloat(x.solar)||0),0);
+        
+        document.getElementById('metric-fuel').innerText = totalSolar.toFixed(1) + ' L';
+       
+       
+        // ===== STATUS MAINTENANCE (LOGIKA BARU) =====
+// ===== STATUS MAINTENANCE (OPS A) =====
+const INTERVAL_OLI = 250;
+const sisaJam = INTERVAL_OLI - totalHours;
+
+let statusText = '🟢 Aman';
+
+if (sisaJam <= 0) {
+  statusText = '🔴 PERLU GANTI OLI';
+} else if (sisaJam <= 25) {
+  statusText = '🟠 KRITIS';
+} else if (sisaJam <= 50) {
+  statusText = '🟡 Peringatan';
+}
+
+document.getElementById('status-maintenance').innerText =
+  `${statusText} (${sisaJam} jam)`;
+
+
+
+
+        // ===== STATUS OPERASI =====
+let statusOperasi = 'Mati';
+
+const lastData = docs[docs.length - 1];
+if (lastData) {
+  const beban = parseFloat(lastData.beban_kw) || 0;
+  const rpm = parseFloat(lastData.rpm) || 0;
+
+  if (beban > 0 && rpm > 500) {
+    statusOperasi = 'Beroperasi';
+  } else if (rpm > 0) {
+    statusOperasi = 'Idle';
+  }
+}
+
+
+document.getElementById('status-operasi').innerText = statusOperasi;
+
+
+
+        // prepare arrays
+        const labels = docs.map(d=> (d.tanggal || '') + (d.jam? ' ' + d.jam : '') );
+        const loads = docs.map(d=> d.beban_kw || 0);
+        const hoursArr = docs.map(d=> d.hours || 0);
+        const temps = docs.map(d=> d.temp_oil || 0);
+        const oils = docs.map(d=> d.press_oil || 0);
+        const fuels = docs.map(d=> d.solar || 0);
+
+        const v1 = docs.map(d=>d.v1||0), v2 = docs.map(d=>d.v2||0), v3 = docs.map(d=>d.v3||0);
+        const a1 = docs.map(d=>d.a1||0), a2 = docs.map(d=>d.a2||0), a3 = docs.map(d=>d.a3||0);
+        const cosphi = docs.map(d=>d.cosphi||0);
+        const rpm = docs.map(d=>d.rpm||0);
+        const freq = docs.map(d=>d.freq||0);
+        const twater = docs.map(d=>d.temp_water||0);
+
+        // consume per hour (solar / hours)
+        const consume = docs.map(d => d.solar || 0);
+        const eff = docs.map(d => hitungEfisiensiPLTD(d));
+
+        // update charts
+        chartLoad.data.labels = labels; chartLoad.data.datasets[0].data = loads; chartLoad.update();
+        chartHours.data.labels = labels; chartHours.data.datasets[0].data = hoursArr; chartHours.update();
+        chartParams.data.labels = labels; chartParams.data.datasets[0].data = temps; chartParams.data.datasets[1].data = oils; chartParams.update();
+        chartFuel.data.labels = labels; chartFuel.data.datasets[0].data = fuels; chartFuel.update();
+
+        chartVoltage.data.labels = labels;
+        chartVoltage.data.datasets[0].data = v1;
+        chartVoltage.data.datasets[1].data = v2;
+        chartVoltage.data.datasets[2].data = v3;
+        chartVoltage.update();
+
+        chartCurrent.data.labels = labels;
+        chartCurrent.data.datasets[0].data = a1;
+        chartCurrent.data.datasets[1].data = a2;
+        chartCurrent.data.datasets[2].data = a3;
+        chartCurrent.update();
+
+        chartCosphi.data.labels = labels; chartCosphi.data.datasets[0].data = cosphi; chartCosphi.update();
+        chartRPM.data.labels = labels; chartRPM.data.datasets[0].data = rpm; chartRPM.update();
+        chartFreq.data.labels = labels; chartFreq.data.datasets[0].data = freq; chartFreq.update();
+        chartWater.data.labels = labels; chartWater.data.datasets[0].data = twater; chartWater.update();
+        chartConsume.data.labels = labels; chartConsume.data.datasets[0].data = consume; chartConsume.update();
+        chartEff.data.labels = labels; chartEff.data.datasets[0].data = eff; chartEff.update();
+
+        // update efficiency hour/day charts
+        const hoursLabels = docs.map(d=> d.jam || '');
+        chartEffHour.data.labels = hoursLabels;
+        chartEffHour.data.datasets[0].data = docs.map(d => hitungEfisiensiPLTD(d));
+        chartEffHour.update();
+
+        // daily aggregation
+        // ===== EFISIENSI HARIAN = RATA-RATA EFISIENSI PER JAM =====
+const dailyEff = {};
+
+docs.forEach(d => {
+  if (!d.tanggal) return;
+
+  const eff = hitungEfisiensiPLTD(d);
+  if (eff === null || eff <= 0) return;
+
+  if (!dailyEff[d.tanggal]) {
+    dailyEff[d.tanggal] = [];
+  }
+  dailyEff[d.tanggal].push(eff);
+});
+
+const dayLabels = Object.keys(dailyEff);
+const dayEff = dayLabels.map(tgl => {
+  const arr = dailyEff[tgl];
+  const avg = arr.reduce((a,b)=>a+b,0) / arr.length;
+  return +avg.toFixed(2);
+});
+
+// ===== Anomaly Detection (TARUH DI SINI) =====
+const anom = detectAnomali(docs);
+const box = document.getElementById('anomali-box');
+
+if (anom && box) {
+  if (anom.status === 'ANOMALI') {
+    box.className = 'alert alert-danger mt-2';
+    box.innerHTML = `⚠️ ANOMALI TERDETEKSI<br>
+${anom.detail.join('<br>')}`;
+
+  } else {
+    box.className = 'alert alert-success mt-2';
+    box.innerHTML = `✅ Operasi Normal<br>
+      Efisiensi: ${anom.efisiensi}%`;
+  }
+}
+// ===== PREDIKSI anomali (DASHBOARD) =====
+const predJam = prediksiMaintenanceJam(docs);
+const smartBox = document.getElementById('smart-maint-result');
+
+if (smartBox) {
+  if (predJam === null) {
+    smartBox.className = 'alert alert-success mt-2';
+    smartBox.innerHTML = '🤖 Prediksi anomali: Kondisi stabil';
+  } else if (predJam <= 20) {
+    smartBox.className = 'alert alert-danger mt-2';
+    smartBox.innerHTML = `⚠️ Prediksi anomali: <b>${predJam} jam</b> menuju kondisi kritis`;
+  } else {
+    smartBox.className = 'alert alert-warning mt-2';
+    smartBox.innerHTML = `🟠 Prediksi anomali: <b>${predJam} jam</b> menuju batas kritis`;
+  }
+}
+
+
+chartEffDay.data.labels = dayLabels;
+chartEffDay.data.datasets[0].data = dayEff;
+chartEffDay.update();
+
+
+        chartEffDay.data.labels = dayLabels; chartEffDay.data.datasets[0].data = dayEff; chartEffDay.update();
+
+        
+        // === STATUS MAINTENANCE BERDASARKAN ML ===
+const predML = prediksiMaintenanceJam(docs);
+//const metricMaint = document.getElementById('metric-maint');
+
+if (predML !== null && predML <= 20) {
+  metricMaint.innerText = '⚠️ Maintenance Segera';
+  metricMaint.style.color = '#e53935';
+} else {
+  metricMaint.innerText = 'Aman';
+  metricMaint.style.color = '#2e7d32';
+}
+
+
+        // === EFISIENSI HARIAN = RATA-RATA EFISIENSI PER JAM ===
+const efisiensiList = docs
+  .map(d => hitungEfisiensiPLTD(d))
+  .filter(e => e > 0);
+
+const efisiensiHarian = efisiensiList.length > 0
+  ? (efisiensiList.reduce((a,b)=>a+b,0) / efisiensiList.length).toFixed(2)
+  : '-';
+
+document.getElementById('filter-summary').innerHTML = `
+  <div>Jumlah Jam Operasi: <b>${efisiensiList.length}</b></div>
+  <div>Efisiensi Harian (Avg): <b>${efisiensiHarian} %</b></div>
+`;
+
+      } catch(err){
+        console.error('refreshMetrics error', err);
+      }
+    }
+
+    
+
+    // ---------- Render full history table ----------
+    async function renderHistoryFull(){
+      try {
+        const tbody = document.querySelector('#tbl-history-full tbody');
+        tbody.innerHTML = '';
+        const snap = await db.collection(COL).orderBy('ts','desc').limit(200).get();
+        snap.docs.forEach(d=>{
+          const o = d.data();
+          const tr = document.createElement('tr');
+          tr.innerHTML = `<td>${o.tanggal||''}</td>
+            <td>${o.jam||''}</td>
+            <td>${o.beban_kw||0}</td>
+            <td>${o.kwh||0}</td>
+            <td>${o.v1||0}</td><td>${o.v2||0}</td><td>${o.v3||0}</td>
+            <td>${o.a1||0}</td><td>${o.a2||0}</td><td>${o.a3||0}</td>
+            <td>${o.cosphi||0}</td><td>${o.freq||0}</td><td>${o.hours||0}</td><td>${o.rpm||0}</td>
+            <td>${o.press_oil||0}</td><td>${o.temp_oil||0}</td><td>${o.solar||0}</td>
+            <td>${o.petugas||''}</td><td>${o.ket||''}</td>`;
+          tbody.prepend(tr);
+        });
+      } catch(err){
+        console.error('renderHistoryFull error', err);
+      }
+    }
+
+   
+
+    
+
+
+
+
+    // ---------- Logbook ----------
+    document.getElementById('btn-save-log').onclick = async ()=>{
+      const payload = {
+        date: document.getElementById('log-date').value || new Date().toISOString().slice(0,10),
+        shift: document.getElementById('log-shift').value,
+        operator: document.getElementById('log-op').value,
+        note: document.getElementById('log-note').value,
+        ts: firebase.firestore.FieldValue.serverTimestamp()
+      };
+      try {
+        await db.collection('logbook').add(payload);
+        alert('Log tersimpan');
+        renderLogHistory();
+      } catch(err){
+        console.error(err);
+        alert('Error menyimpan log: ' + (err.message||err));
+      }
+    };
+
+    async function renderLogHistory(){
+      const snap = await db.collection('logbook').orderBy('ts','desc').limit(50).get();
+      const container = document.getElementById('log-history');
+      container.innerHTML = snap.docs.map(d=>{
+        const o = d.data();
+        return `<div class='mb-2 p-2' style='border-bottom:1px solid #eee'><b>${o.date} • ${o.shift} • ${o.operator}</b><div>${o.note || ''}</div></div>`;
+      }).join('');
+    }
+
+    // ---------- Absensi ----------
+    document.getElementById('btn-absen').onclick = async ()=>{
+      const name = document.getElementById('abs-name').value || 'Operator';
+      const shift = document.getElementById('abs-shift').value || 'Shift 1';
+      try {
+        await db.collection('absensi').add({name, shift, ts: firebase.firestore.FieldValue.serverTimestamp(), tanggal:new Date().toISOString().slice(0,10)});
+        alert('Absensi tercatat: ' + name);
+        renderAbsensi();
+      } catch(err){ console.error(err); alert('Error absen: ' + (err.message||err)); }
+    };
+
+    async function renderAbsensi(){
+      const snap = await db.collection('absensi').orderBy('ts','desc').limit(20).get();
+      const node = document.getElementById('abs-list');
+      node.innerHTML = snap.docs.map(d=>{ const o=d.data(); return `<div style="padding:8px 0;border-bottom:1px solid #f1f1f1">${o.tanggal} • <b>${o.name}</b> • ${o.shift}</div>`}).join('');
+    }
+
+    // // ---------- Export CSV ----------
+    // document.getElementById('btn-export-csv').onclick = async ()=>{
+    //   const snap = await db.collection(COL).orderBy('ts','desc').get();
+    //   const rows = snap.docs.map(d=>d.data());
+    //   let csv = [
+    //     ['tanggal','jam','beban_kw','kwh','v1','v2','v3','a1','a2','a3','cosphi','freq','hours','rpm','press_oil','temp_oil','temp_water','battery','solar','petugas','ket'].join(',')
+    //   ].join('\n') + '\n';
+    //   rows.forEach(r=>{
+    //     csv += [
+    //       r.tanggal||'',
+    //       r.jam||'',
+    //       r.beban_kw||0,
+    //       r.kwh||0,
+    //       r.v1||0,r.v2||0,r.v3||0,
+    //       r.a1||0,r.a2||0,r.a3||0,
+    //       r.cosphi||0,r.freq||0,
+    //       r.hours||0,r.rpm||0,
+    //       r.press_oil||0,r.temp_oil||0,r.temp_water||0,
+    //       r.battery||0,r.solar||0,
+    //       `"${(r.petugas||'').replace(/"/g,'""')}"`,
+    //       `"${(r.ket||'').replace(/"/g,'""')}"` ].join(',') + '\n';
+    //   });
+    //   const blob = new Blob([csv],{type:'text/csv'}); const url = URL.createObjectURL(blob);
+    //   const a = document.createElement('a'); a.href = url; a.download = 'goms_operasi.csv'; a.click();
+    // };
+
+    // ---------- Export PDF ----------
+//     async function exportPDF() {
+//   const { jsPDF } = window.jspdf;
+//   const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+
+//   let y = 40;
+
+//   // ===== HEADER =====
+//   doc.setFontSize(16);
+//   doc.text('GOMS - Genset Operation Monitoring System', 40, y);
+//   y += 20;
+
+//   doc.setFontSize(10);
+//   doc.text('Generated: ' + new Date().toLocaleString(), 40, y);
+//   y += 30;
+
+//   // ===== DASHBOARD SUMMARY =====
+//   doc.setFontSize(13);
+//   doc.text('Ringkasan Operasional', 40, y);
+//   y += 20;
+
+//   doc.setFontSize(11);
+
+//   const statusOperasi = document.getElementById('status-operasi')?.innerText || '-';
+//   const totalHours = document.getElementById('metric-hours')?.innerText || '-';
+//   const totalSolar = document.getElementById('metric-fuel')?.innerText || '-';
+//   const statusMaint = document.getElementById('status-maintenance')?.innerText || '-';
+//   const alarm = document.getElementById('metric-alarm')?.innerText || '-';
+//   const predML = document.getElementById('smart-maint-result')?.innerText || '-';
+
+//   doc.text(`Status Operasi      : ${statusOperasi}`, 40, y); y += 18;
+//   doc.text(`Jam Operasi Total   : ${totalHours}`, 40, y); y += 18;
+//   doc.text(`Pemakaian Solar     : ${totalSolar}`, 40, y); y += 18;
+//   doc.text(`Status Maintenance  : ${statusMaint}`, 40, y); y += 18;
+//   doc.text(`Alarm               : ${alarm}`, 40, y); y += 18;
+
+//   y += 10;
+//   doc.setFontSize(12);
+//   doc.text('Prediksi Maintenance (ML)', 40, y);
+//   y += 18;
+
+//   doc.setFontSize(11);
+//   doc.text(predML, 40, y, { maxWidth: 500 });
+
+//   // ===== FOOTER =====
+//   doc.setFontSize(9);
+//   doc.text(
+//     'Dokumen ini dihasilkan otomatis oleh sistem GOMS',
+//     40,
+//     820
+//   );
+
+//   doc.save('GOMS_Laporan_Dashboard.pdf');
+// }
+
+
+    // ---------- Filter apply ----------
+    document.getElementById('btn-apply-filter').onclick = ()=>{
+      const f = document.getElementById('filter-from').value || null;
+      const t = document.getElementById('filter-to').value || null;
+      refreshMetrics(f,t);
+    };
+
+    // ---------- Kickstart ----------
+    (async ()=>{
+      show('dashboard');
+      document.getElementById('log-date').value = new Date().toISOString().slice(0,10);
+      await refreshMetrics();
+      await renderHistoryFull();
+      await renderLogHistory();
+      await renderAbsensi();
+    })();
+
+  </script>
+
+</body>
+</html>
