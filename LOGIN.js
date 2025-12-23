@@ -9,8 +9,9 @@ function login() {
 
   if (user === USERNAME && pass === PASSWORD) {
     localStorage.setItem("loginOK", "true");
-    window.location.href = "singlefile_webapp.html"; // halaman dashboard
+    window.location.href = "index.html"; // halaman dashboard
   } else {
     err.innerText = "Username atau Password salah";
   }
 }
+
